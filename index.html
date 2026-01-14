@@ -1345,7 +1345,13 @@ const skinData=[
         {id:'ad_2',ru:'ТОНКИЙ КОНТУР',en:'SLIM OUTLINE',tr:'İNCE ÇİZGİ',p:0,c:'#00ff88',ads:2,anim:8,bonus:{income:1.03,mag:1.03,collect:1}},
         {id:'ad_5',ru:'ХРОМОВЫЙ ГЕКС',en:'CHROME HEX',tr:'KROM ALTIGEN',p:0,c:'#ffffff',ads:5,anim:9,bonus:{income:1.04,mag:1.02,collect:1.02}},
         {id:'ad_10',ru:'ПРИЗМАТИЧЕСКИЙ ТРИГОН',en:'PRISM TRIGON',tr:'PRİZMA ÜÇGENİ',p:0,c:'#bc00ff',ads:10,anim:10,bonus:{income:1.05,mag:1.03,collect:1.02}},
-        {id:'ad_20',ru:'ЛОТОС НЕБУЛЫ',en:'NEBULA LOTUS',tr:'BULUT LOTUSU',p:0,c:'#ffcc00',ads:20,anim:11,bonus:{income:1.06,mag:1.04,collect:1.03}}
+        {id:'ad_20',ru:'ЛОТОС НЕБУЛЫ',en:'NEBULA LOTUS',tr:'BULUT LOTUSU',p:0,c:'#ffcc00',ads:20,anim:11,bonus:{income:1.06,mag:1.04,collect:1.03}},
+        {id:'eclipse',ru:'ЗАТМЕНИЕ',en:'ECLIPSE',tr:'TUTULMA',p:50000000,c:'#ff6a00',anim:14,bonus:{income:1.05,mag:1.03,collect:1.03}},
+        {id:'stardust',ru:'ЗВЁЗДНАЯ ПЫЛЬ',en:'STARDUST',tr:'YILDIZ TOZU',p:120000000,c:'#8cf6ff',anim:15,bonus:{income:1.06,mag:1.02,collect:1.04}},
+        {id:'quantum',ru:'КВАНТОВЫЙ СДВИГ',en:'QUANTUM SHIFT',tr:'KUANTUM KAYMA',p:350000000,c:'#00ffb3',anim:16,bonus:{income:1.07,mag:1.05,collect:1.03}},
+        {id:'phoenix',ru:'ФЕНИКС',en:'PHOENIX',tr:'ANKA',p:900000000,c:'#ff2b6a',anim:17,bonus:{income:1.08,mag:1.03,collect:1.05}},
+        {id:'glacier',ru:'ЛЕДЯНОЙ КВАЗАР',en:'GLACIER QUASAR',tr:'BUZLU KUAZAR',p:2000000000,c:'#7aa7ff',anim:18,bonus:{income:1.09,mag:1.06,collect:1.04}},
+        {id:'aether',ru:'ЭФИРНЫЙ СПЕКТР',en:'AETHER SPECTRUM',tr:'ETER SPEKTRUM',p:5000000000,c:'#b06bff',anim:19,bonus:{income:1.10,mag:1.06,collect:1.06}}
     ];
 
     const i18n={
@@ -1781,7 +1787,76 @@ function initGfx(){
         ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.fill();
     };
 
-    const dotOrbit = (rr, count, size, speed, alpha = 0.9, jitter = 0.0, col = strokeBase) => {
+    
+    const drawCenterSymbol = (type, col=strokeBase) => {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.lineWidth = Math.max(2, r * 0.07);
+        ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+        ctx.shadowBlur = r * 0.45;
+        ctx.shadowColor = hex2rgba(col, 0.75);
+        const rr = r * 0.42;
+
+        if (type === 'eclipse') {
+            // crescent
+            ctx.save();
+            ctx.fillStyle = 'rgba(255,255,255,0.16)';
+            ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI*2); ctx.fill();
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath(); ctx.arc(rr*0.38, -rr*0.08, rr*0.92, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI*2); ctx.stroke();
+        } else if (type === 'star') {
+            const spikes=5, outer=rr, inner=rr*0.45;
+            ctx.beginPath();
+            for(let i=0;i<spikes*2;i++){
+                const ang = (Math.PI/spikes)*i - Math.PI/2;
+                const rad = (i%2===0)?outer:inner;
+                ctx.lineTo(Math.cos(ang)*rad, Math.sin(ang)*rad);
+            }
+            ctx.closePath(); ctx.stroke();
+        } else if (type === 'quantum') {
+            // Q ring + tail
+            ctx.beginPath(); ctx.arc(0,0, rr, 0, Math.PI*2); ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(rr*0.25, rr*0.25);
+            ctx.lineTo(rr*0.78, rr*0.78);
+            ctx.stroke();
+        } else if (type === 'phoenix') {
+            // flame
+            ctx.beginPath();
+            ctx.moveTo(0, -rr);
+            ctx.quadraticCurveTo(rr*0.85, -rr*0.15, 0, rr);
+            ctx.quadraticCurveTo(-rr*0.85, -rr*0.15, 0, -rr);
+            ctx.closePath(); ctx.stroke();
+        } else if (type === 'snow') {
+            // snowflake
+            const arm=rr;
+            for(let k=0;k<6;k++){
+                const a=k*(Math.PI*2/6);
+                ctx.beginPath();
+                ctx.moveTo(0,0);
+                ctx.lineTo(Math.cos(a)*arm, Math.sin(a)*arm);
+                ctx.stroke();
+            }
+        } else if (type === 'aether') {
+            // infinity / spectrum loop
+            ctx.beginPath();
+            for(let t=0;t<=Math.PI*2+0.001;t+=0.12){
+                const sx = Math.sin(t);
+                const cx = Math.cos(t);
+                const x0 = rr*0.78 * sx;
+                const y0 = rr*0.42 * Math.sin(2*t);
+                if(t===0) ctx.moveTo(x0,y0); else ctx.lineTo(x0,y0);
+            }
+            ctx.stroke();
+        }
+        ctx.restore();
+    };
+
+const dotOrbit = (rr, count, size, speed, alpha = 0.9, jitter = 0.0, col = strokeBase) => {
         ctx.save();
         ctx.globalAlpha = alpha;
         ctx.fillStyle = col;
@@ -2346,7 +2421,184 @@ function initGfx(){
         ctx.globalAlpha = 1;
     }
 
-    // fallback
+    
+    // 14: ECLIPSE — dark core + fiery corona + rays
+    else if (anim === 14) {
+        fillDisc(r * 0.90, 0.10, strokeBase);
+        // dark lens core
+        ctx.save();
+        const core = ctx.createRadialGradient(x, y, 0, x, y, r * 0.88);
+        core.addColorStop(0, 'rgba(0,0,0,0.95)');
+        core.addColorStop(0.72, 'rgba(0,0,0,0.95)');
+        core.addColorStop(1, 'rgba(0,0,0,0.00)');
+        ctx.fillStyle = core;
+        ctx.beginPath(); ctx.arc(x, y, r * 0.88, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+
+        // corona
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        const g = ctx.createRadialGradient(x, y, r * 0.55, x, y, r * 1.85);
+        g.addColorStop(0, 'rgba(255,140,0,0.00)');
+        g.addColorStop(0.35, 'rgba(255,106,0,0.28)');
+        g.addColorStop(0.60, 'rgba(255,60,0,0.18)');
+        g.addColorStop(1, 'rgba(255,60,0,0.00)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(x, y, r * 1.85, 0, Math.PI*2); ctx.fill();
+        rayBurst(r * 0.78, r * 1.42, 22, tt * 0.35, 0.18);
+        ctx.restore();
+
+        ring(r * 1.05, Math.max(3, r * 0.10), [14, 8], -tt * 1.1, 0.90, strokeBase, 1.15);
+        dotOrbit(r * 1.22, 9, r * 0.05, 0.85, 0.60, 0.0, 'rgba(255,255,255,0.88)');
+        drawCenterSymbol('eclipse', strokeBase);
+    }
+
+    // 15: STARDUST — glitter belt + twinkle core
+    else if (anim === 15) {
+        fillDisc(r * 0.95, 0.10, strokeBase);
+        ring(r * 1.06, Math.max(2.6, r * 0.085), [2, 10], tt * 0.7, 0.85, strokeBase, 0.95);
+        ring(r * 0.78, Math.max(2.0, r * 0.06), [10, 14], -tt * 1.2, 0.55, 'rgba(255,255,255,0.55)', 0.55);
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 30; i++) {
+            const a = tt * 0.55 + i * (Math.PI*2 / 30);
+            const rr = r * (0.98 + 0.07 * Math.sin(tt * 2.1 + i));
+            const px = x + Math.cos(a) * rr;
+            const py = y + Math.sin(a) * rr;
+            ctx.globalAlpha = 0.08 + 0.10 * Math.sin(tt * 3.2 + i);
+            ctx.fillStyle = (i % 3 === 0) ? 'rgba(255,255,255,0.92)' : hex2rgba(strokeBase, 0.88);
+            ctx.beginPath(); ctx.arc(px, py, Math.max(0.9, r * 0.03), 0, Math.PI*2); ctx.fill();
+        }
+        ctx.restore();
+
+        drawCenterSymbol('star', strokeBase);
+    }
+
+    // 16: QUANTUM — glitch rings + phase dots + scan wedge
+    else if (anim === 16) {
+        const ph = 0.5 + 0.5 * Math.sin(tt * 3.3);
+        ring(r * (1.02 + 0.03 * Math.sin(tt * 6.0)), Math.max(3, r * 0.11), [8, 6], tt * 2.2, 0.88, strokeBase, 1.05);
+        ring(r * 0.80, Math.max(2, r * 0.07), [2, 8], -tt * 3.1, 0.60, 'rgba(255,255,255,0.45)', 0.65);
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 10; i++) {
+            const a = tt * (1.6 + ph) + i * (Math.PI*2 / 10);
+            const rr = r * (0.60 + 0.28 * ((i % 2) ? 1 : ph));
+            const jx = (Math.sin(tt * 9 + i) > 0.85) ? r * 0.10 : 0;
+            const px = x + Math.cos(a) * (rr + jx);
+            const py = y + Math.sin(a) * (rr + jx);
+            ctx.globalAlpha = 0.24 + 0.24 * Math.sin(tt * 4.0 + i);
+            ctx.fillStyle = (i % 2) ? strokeBase : 'rgba(255,255,255,0.78)';
+            ctx.beginPath(); ctx.arc(px, py, Math.max(1.0, r * 0.04), 0, Math.PI*2); ctx.fill();
+        }
+        ctx.restore();
+
+        conicStroke(r * 0.94, Math.max(2, r * 0.07), tt * 1.0, 0.48, 0.95);
+        drawCenterSymbol('quantum', strokeBase);
+    }
+
+    // 17: PHOENIX — flame petals + sparks
+    else if (anim === 17) {
+        ring(r * 1.02, Math.max(3, r * 0.10), null, 0, 0.90, strokeBase, 1.20);
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        rayBurst(r * 0.72, r * 1.48, 16, -tt * 0.55, 0.18);
+        ctx.restore();
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(tt * 0.65);
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 7; i++) {
+            const a = i * (Math.PI*2 / 7);
+            ctx.save();
+            ctx.rotate(a);
+            const pg = ctx.createRadialGradient(r * 0.25, 0, 0, r * 0.25, 0, r * 0.85);
+            pg.addColorStop(0, 'rgba(255,255,255,0.35)');
+            pg.addColorStop(0.35, hex2rgba(strokeBase, 0.30));
+            pg.addColorStop(1, 'rgba(255,0,80,0.00)');
+            ctx.fillStyle = pg;
+            ctx.globalAlpha = 0.58;
+            ctx.beginPath();
+            ctx.moveTo(r * 0.10, 0);
+            ctx.quadraticCurveTo(r * 0.60, -r * 0.30, r * 1.00, 0);
+            ctx.quadraticCurveTo(r * 0.60, r * 0.30, r * 0.10, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+        ctx.restore();
+
+        // sparks
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 10; i++) {
+            const a = tt * 1.6 + i * (Math.PI*2 / 10);
+            const rr = r * (0.55 + 0.55 * (i / 10));
+            const px = x + Math.cos(a) * rr;
+            const py = y + Math.sin(a) * rr - r * 0.12 * (0.5 + 0.5 * Math.sin(tt * 2 + i));
+            ctx.globalAlpha = 0.08 + 0.12 * Math.sin(tt * 5 + i);
+            ctx.fillStyle = 'rgba(255,255,255,0.75)';
+            ctx.beginPath(); ctx.arc(px, py, Math.max(0.9, r * 0.03), 0, Math.PI*2); ctx.fill();
+        }
+        ctx.restore();
+
+        drawCenterSymbol('phoenix', strokeBase);
+    }
+
+    // 18: GLACIER — icy rings + drifting shards
+    else if (anim === 18) {
+        ring(r * 1.06, Math.max(3, r * 0.10), [18, 10], tt * 0.55, 0.85, strokeBase, 1.00);
+        ring(r * 0.82, Math.max(2, r * 0.07), [6, 10], -tt * 0.9, 0.60, 'rgba(255,255,255,0.50)', 0.70);
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        const fg = ctx.createRadialGradient(x, y, 0, x, y, r * 0.96);
+        fg.addColorStop(0, 'rgba(255,255,255,0.16)');
+        fg.addColorStop(0.45, hex2rgba(strokeBase, 0.12));
+        fg.addColorStop(1, 'transparent');
+        ctx.fillStyle = fg;
+        ctx.beginPath(); ctx.arc(x, y, r * 0.96, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 10; i++) {
+            const a = -tt * 0.55 + i * (Math.PI*2 / 10);
+            const rr = r * 1.08;
+            const px = x + Math.cos(a) * rr;
+            const py = y + Math.sin(a) * rr;
+            ctx.save();
+            ctx.translate(px, py);
+            ctx.rotate(a - tt * 0.35);
+            ctx.globalAlpha = 0.10 + 0.12 * Math.sin(tt * 3 + i);
+            ctx.fillStyle = 'rgba(255,255,255,0.78)';
+            ctx.beginPath();
+            ctx.moveTo(0, -r * 0.16);
+            ctx.lineTo(r * 0.09, r * 0.12);
+            ctx.lineTo(-r * 0.09, r * 0.12);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+        ctx.restore();
+
+        dotOrbit(r * 0.64, 7, r * 0.05, 1.1, 0.45, 0.0, 'rgba(255,255,255,0.82)');
+        drawCenterSymbol('snow', strokeBase);
+    }
+
+    // 19: AETHER — spectrum loop + prismatic orbit
+    else if (anim === 19) {
+        fillDisc(r * 0.98, 0.11, strokeBase);
+        ring(r * 1.08, Math.max(3, r * 0.11), [10, 6], tt * 1.05, 0.90, strokeBase, 1.25);
+        conicStroke(r * 0.98, Math.max(2, r * 0.07), -tt * 0.8, 0.55, 1.0);
+        dotOrbit(r * 1.28, 12, r * 0.045, 0.65, 0.62, 0.0, 'rgba(255,255,255,0.85)');
+        drawCenterSymbol('aether', strokeBase);
+    }
+
+// fallback
     else {
         ring(r, 3, [5, 5], tt, 1);
     }
